@@ -118,6 +118,7 @@ def train_off_policy_agent(env: EnvironmentPBS, agent, num_episodes, replay_buff
     from Environments.FeatureExtract import FE
     fe = FE(agent.queue_len)
     num_iter = 0
+    if_first = True
     for i in range(10):
         with tqdm(total=int(num_episodes / 10), desc='Iteration %d' % i) as pbar:
             for i_episode in range(int(num_episodes / 10)):
@@ -133,7 +134,7 @@ def train_off_policy_agent(env: EnvironmentPBS, agent, num_episodes, replay_buff
                     replay_buffer.add(state, action, reward, choose_action, next_state, done)
                     state = next_state
                     episode_return += reward
-                    if replay_buffer.size() > minimal_size:
+                    if replay_buffer.size() > minimal_size and not if_first:
                         if episode_iter%1000==0:
                             print(env.observation,env.observation_require_time,env.current_step)
                         episode_iter+=1
@@ -141,6 +142,7 @@ def train_off_policy_agent(env: EnvironmentPBS, agent, num_episodes, replay_buff
                         transition_dict = {'states': b_s, 'actions': b_a, 'next_states': b_ns, 'rewards': b_r,
                                            'choose_action': b_c, 'dones': b_d}
                         c_1_loss, c_2_loss, a_loss = agent.update(transition_dict)
+                if_first = False
                 return_list.append(episode_return)
                 print(return_list)
                 agent.save(f"model_{num_iter}.pth")

@@ -97,10 +97,10 @@ class QValueNet(torch.nn.Module):
         choose_action_1, choose_action_2 = choose
         mask1 = torch.cat([(choose_action_1.sum(1, keepdim=True) <= 0).float(), choose_action_1], 1).bool()
         mask2 = torch.cat([(choose_action_2.sum(1, keepdim=True) <= 0).float(), choose_action_2], 1).bool()
-        action1 = self.fc2(x)
-        action2 = self.fc4(x)
-        action1 = torch.where(mask1,action1,0)
-        action2 = torch.where(mask2,action2,0)
+        action1 = self.fc2(x).float()
+        action2 = self.fc4(x).float()
+        action1 = torch.where(mask1,action1,torch.Tensor([0.]).to(action1.device))
+        action2 = torch.where(mask2,action2,torch.Tensor([0.]).to(action2.device))
         return action1, action2
 
 
