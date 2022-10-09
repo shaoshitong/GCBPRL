@@ -117,7 +117,7 @@ def train_off_policy_agent(env: EnvironmentPBS, agent, num_episodes, replay_buff
     return_list = []
     from Environments.FeatureExtract import FE
     fe = FE(agent.queue_len)
-    num_iter = 30
+    num_iter = 0
     if_first = True
     for i in range(10):
         with tqdm(total=int(num_episodes / 10), desc='Iteration %d' % i) as pbar:

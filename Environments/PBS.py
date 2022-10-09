@@ -11,8 +11,9 @@ import gym
 from gym import spaces
 import copy
 import matplotlib.pyplot as plt
-import matplotlib as  mpl
-from matplotlib  import pyplot as plt
+import matplotlib as mpl
+from matplotlib import pyplot as plt
+
 mpl.rcParams[u'font.sans-serif'] = ['simhei']
 mpl.rcParams['axes.unicode_minus'] = False
 logger = logging.getLogger(__name__)
@@ -339,32 +340,45 @@ class EnvironmentPBS(gym.Env):
         return result
 
     def _every_car_where(self):
+        total_number = 0
         result = np.zeros(self.queue_number)
         for car in self.tuzhuang_observation[0].queue:
             number = car.number
             result[number - 1] = 0
+            total_number+=1
         for car in self.tuzhuang_observation[1].queue:
             number = car.number
             result[number - 1] = 3
+            total_number+=1
         for i in range(7):
             for j in range(10):
                 if self.observation[i, j] != 0:
-                    if self.observation_require_time[i,j]!=0:
-                        if i<6:
-                            result[self.observation[i, j].item() - 1] = self.turn_dictionary[str(10 + (j - 1) * 100 + i)]
+                    if self.observation_require_time[i, j] != 0:
+                        if i < 6:
+                            if j>0:
+                                total_number += 1
+                                result[self.observation[i, j].item() - 1] = self.turn_dictionary[
+                                    str(10 + (j - 1) * 100 + i)]
                         else:
-                            result[self.observation[i, j].item() - 1] = self.turn_dictionary[str(10 + (j + 1) * 100 + i)]
+                            if j<9:
+                                total_number += 1
+                                result[self.observation[i, j].item() - 1] = self.turn_dictionary[
+                                    str(10 + (j + 1) * 100 + i)]
                     else:
+                        total_number += 1
                         result[self.observation[i, j].item() - 1] = self.turn_dictionary[str(10 + j * 100 + i)]
 
         if self.agent_observation_require_time[0] > 0:
             index = self.agent_observation[0] - 7 if self.agent_observation[0] >= 7 else self.agent_observation[0] - 1
             result[self.observation[index, 0].item() - 1] = 1
+            total_number+=1
         if self.agent_observation_require_time[1] > 0:
             if self.agent_observation[1] >= 7:
                 result[self.observation[6, 9].item() - 1] = 2
+                total_number += 1
             else:
                 result[self.tuzhuang_observation[1].queue[-1].number - 1] = 2
+                total_number += 1
         return result
 
     def _reward_compute(self, done):  # TODO: 计算当前回报 (相较于上一次回报获取，增加或者减少了多少)

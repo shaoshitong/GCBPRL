@@ -20,7 +20,7 @@ num_episodes = 200
 hidden_dim = 128
 gamma = 0.98
 tau = 0.005  # 软更新参数
-buffer_size = 100000
+buffer_size = 50000
 minimal_size = 600
 batch_size = 512
 target_entropy = -14
@@ -37,7 +37,6 @@ replay_buffer = ReplayBuffer(buffer_size)
 state_dim = env.observation_space.shape[0]
 agent = SAC(queue_len, hidden_dim, action_dim, action_dim, actor_lr, critic_lr, alpha_lr,
             target_entropy, tau, gamma, device)
-agent.load("model_29.pth")
 return_list = train_off_policy_agent(env, agent, num_episodes,
                                      replay_buffer, minimal_size,
                                      batch_size)
