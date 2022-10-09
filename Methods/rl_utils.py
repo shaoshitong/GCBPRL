@@ -2,16 +2,26 @@ import collections
 import random
 
 import numpy as np
+import pandas as pd
 import torch
 from tqdm import tqdm
-import pandas as pd
+
+
 class ReplayBuffer:
     def __init__(self, capacity):
         self.buffer = collections.deque(maxlen=capacity)
 
     def add(self, state, action, reward, choose_action, next_state, done):
-        self.buffer.append((self.trun_list_gpu_to_cpu(state), action, reward, self.trun_list_gpu_to_cpu(choose_action),
-                            self.trun_list_gpu_to_cpu(next_state), done))
+        self.buffer.append(
+            (
+                self.trun_list_gpu_to_cpu(state),
+                action,
+                reward,
+                self.trun_list_gpu_to_cpu(choose_action),
+                self.trun_list_gpu_to_cpu(next_state),
+                done,
+            )
+        )
 
     def trun_list_gpu_to_cpu(self, l):
         new_l = []
@@ -20,7 +30,14 @@ class ReplayBuffer:
         return new_l
 
     def state_get(self, state):
-        new_obs_1, new_obs_2, new_obs_3, new_obs_time_1, new_obs_time_2, new_obs_time_3 = [], [], [], [], [], []
+        new_obs_1, new_obs_2, new_obs_3, new_obs_time_1, new_obs_time_2, new_obs_time_3 = (
+            [],
+            [],
+            [],
+            [],
+            [],
+            [],
+        )
         for [obs_1, obs_2, obs_3, obs_time_1, obs_time_2, obs_time_3] in state:
             new_obs_1.append(obs_1)
             new_obs_2.append(obs_2)
@@ -37,9 +54,9 @@ class ReplayBuffer:
         return [new_obs_1, new_obs_2, new_obs_3, new_obs_time_1, new_obs_time_2, new_obs_time_3]
 
     def sample(self, batch_size):
-        begin = random.randint(0,max(0,len(self.buffer)-batch_size-1))
+        begin = random.randint(0, max(0, len(self.buffer) - batch_size - 1))
         transitions = []
-        for i in range(begin,begin+batch_size):
+        for i in range(begin, begin + batch_size):
             transitions.append(self.buffer[i])
         # transitions = self.buffer[begin:begin+batch_size]
         state, action, reward, choose_action, next_state, done = zip(*transitions)
@@ -85,27 +102,37 @@ def compute_advantage(gamma, lmbda, td_delta):
 def train_on_policy_agent(env, agent, num_episodes):
     return_list = []
     for i in range(10):
-        with tqdm(total=int(num_episodes / 10), desc='Iteration %d' % i) as pbar:
+        with tqdm(total=int(num_episodes / 10), desc="Iteration %d" % i) as pbar:
             for i_episode in range(int(num_episodes / 10)):
                 episode_return = 0
-                transition_dict = {'states': [], 'actions': [], 'next_states': [], 'rewards': [], 'dones': []}
+                transition_dict = {
+                    "states": [],
+                    "actions": [],
+                    "next_states": [],
+                    "rewards": [],
+                    "dones": [],
+                }
                 state = env.reset()
                 done = False
                 while not done:
                     action = agent.take_action(state)
                     next_state, reward, done, _ = env.step(action)
-                    transition_dict['states'].append(state)
-                    transition_dict['actions'].append(action)
-                    transition_dict['next_states'].append(next_state)
-                    transition_dict['rewards'].append(reward)
-                    transition_dict['dones'].append(done)
+                    transition_dict["states"].append(state)
+                    transition_dict["actions"].append(action)
+                    transition_dict["next_states"].append(next_state)
+                    transition_dict["rewards"].append(reward)
+                    transition_dict["dones"].append(done)
                     state = next_state
                     episode_return += reward
                 return_list.append(episode_return)
                 agent.update(transition_dict)
                 if (i_episode + 1) % 10 == 0:
-                    pbar.set_postfix({'episode': '%d' % (num_episodes / 10 * i + i_episode + 1),
-                                      'return': '%.3f' % np.mean(return_list[-10:])})
+                    pbar.set_postfix(
+                        {
+                            "episode": "%d" % (num_episodes / 10 * i + i_episode + 1),
+                            "return": "%.3f" % np.mean(return_list[-10:]),
+                        }
+                    )
                 pbar.update(1)
     return return_list
 
@@ -113,14 +140,17 @@ def train_on_policy_agent(env, agent, num_episodes):
 from Environments.PBS import EnvironmentPBS
 
 
-def train_off_policy_agent(env: EnvironmentPBS, agent, num_episodes, replay_buffer, minimal_size, batch_size):
+def train_off_policy_agent(
+    env: EnvironmentPBS, agent, num_episodes, replay_buffer, minimal_size, batch_size
+):
     return_list = []
     from Environments.FeatureExtract import FE
+
     fe = FE(agent.queue_len)
     num_iter = 0
     if_first = True
     for i in range(10):
-        with tqdm(total=int(num_episodes / 10), desc='Iteration %d' % i) as pbar:
+        with tqdm(total=int(num_episodes / 10), desc="Iteration %d" % i) as pbar:
             for i_episode in range(int(num_episodes / 10)):
                 episode_return = 0
                 state, _1, _2, choose_action = env.reset(env.path)
@@ -130,17 +160,25 @@ def train_off_policy_agent(env: EnvironmentPBS, agent, num_episodes, replay_buff
                 while not done:
                     action = agent.take_action(state, choose_action)
                     next_state, reward, done, choose_action = env.step(action)
-                    next_state, reward, done, choose_action = fe(next_state, reward, done, choose_action)
+                    next_state, reward, done, choose_action = fe(
+                        next_state, reward, done, choose_action
+                    )
                     replay_buffer.add(state, action, reward, choose_action, next_state, done)
                     state = next_state
                     episode_return += reward
                     if replay_buffer.size() > minimal_size and not if_first:
-                        if episode_iter%1000==0:
-                            print(env.observation,env.observation_require_time,env.current_step)
-                        episode_iter+=1
+                        if episode_iter % 1000 == 0:
+                            print(env.observation, env.observation_require_time, env.current_step)
+                        episode_iter += 1
                         b_s, b_a, b_r, b_c, b_ns, b_d = replay_buffer.sample(batch_size)
-                        transition_dict = {'states': b_s, 'actions': b_a, 'next_states': b_ns, 'rewards': b_r,
-                                           'choose_action': b_c, 'dones': b_d}
+                        transition_dict = {
+                            "states": b_s,
+                            "actions": b_a,
+                            "next_states": b_ns,
+                            "rewards": b_r,
+                            "choose_action": b_c,
+                            "dones": b_d,
+                        }
                         c_1_loss, c_2_loss, a_loss = agent.update(transition_dict)
                 if_first = False
                 return_list.append(episode_return)
@@ -148,14 +186,18 @@ def train_off_policy_agent(env: EnvironmentPBS, agent, num_episodes, replay_buff
                 agent.save(f"model_{num_iter}.pth")
                 num_iter += 1
                 if (i_episode + 1) % 10 == 0:
-                    pbar.set_postfix({'episode': '%d' % (num_episodes / 10 * i + i_episode + 1),
-                                      'return': '%.3f' % np.mean(return_list[-10:])})
+                    pbar.set_postfix(
+                        {
+                            "episode": "%d" % (num_episodes / 10 * i + i_episode + 1),
+                            "return": "%.3f" % np.mean(return_list[-10:]),
+                        }
+                    )
                 pbar.update(1)
     return return_list
 
-def trun_array_to_csv(path):
-    f = np.load(path) # TODO: (TIME_STEP,QUEUE_NUMBER)
-    f = f.transpose([1,0])
-    f = pd.DataFrame(f,index=[i+1 for i in range(f.shape[0])])
-    f.to_excel(path.split(".")[0]+".xlsx")
 
+def trun_array_to_csv(path):
+    f = np.load(path)  # TODO: (TIME_STEP,QUEUE_NUMBER)
+    f = f.transpose([1, 0])
+    f = pd.DataFrame(f, index=[i + 1 for i in range(f.shape[0])])
+    f.to_excel(path.split(".")[0] + ".xlsx")

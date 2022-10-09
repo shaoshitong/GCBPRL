@@ -2,10 +2,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn.functional as F
+from rl_utils import *
 from torch.distributions import Normal
 from tqdm import tqdm
-
-from rl_utils import *
 
 
 class PolicyNetContinuous(torch.nn.Module):  # Critic
