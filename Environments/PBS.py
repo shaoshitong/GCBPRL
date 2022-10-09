@@ -349,7 +349,14 @@ class EnvironmentPBS(gym.Env):
         for i in range(7):
             for j in range(10):
                 if self.observation[i, j] != 0:
-                    result[self.observation[i, j].item() - 1] = self.turn_dictionary[str(10 + j * 100 + i)]
+                    if self.observation_require_time[i,j]!=0:
+                        if i<6:
+                            result[self.observation[i, j].item() - 1] = self.turn_dictionary[str(10 + (j - 1) * 100 + i)]
+                        else:
+                            result[self.observation[i, j].item() - 1] = self.turn_dictionary[str(10 + (j + 1) * 100 + i)]
+                    else:
+                        result[self.observation[i, j].item() - 1] = self.turn_dictionary[str(10 + j * 100 + i)]
+
         if self.agent_observation_require_time[0] > 0:
             index = self.agent_observation[0] - 7 if self.agent_observation[0] >= 7 else self.agent_observation[0] - 1
             result[self.observation[index, 0].item() - 1] = 1

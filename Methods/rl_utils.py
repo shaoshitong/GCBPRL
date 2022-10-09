@@ -4,7 +4,7 @@ import random
 import numpy as np
 import torch
 from tqdm import tqdm
-
+import pandas as pd
 class ReplayBuffer:
     def __init__(self, capacity):
         self.buffer = collections.deque(maxlen=capacity)
@@ -117,7 +117,7 @@ def train_off_policy_agent(env: EnvironmentPBS, agent, num_episodes, replay_buff
     return_list = []
     from Environments.FeatureExtract import FE
     fe = FE(agent.queue_len)
-    num_iter = 0
+    num_iter = 30
     if_first = True
     for i in range(10):
         with tqdm(total=int(num_episodes / 10), desc='Iteration %d' % i) as pbar:
@@ -152,3 +152,10 @@ def train_off_policy_agent(env: EnvironmentPBS, agent, num_episodes, replay_buff
                                       'return': '%.3f' % np.mean(return_list[-10:])})
                 pbar.update(1)
     return return_list
+
+def trun_array_to_csv(path):
+    f = np.load(path) # TODO: (TIME_STEP,QUEUE_NUMBER)
+    f = f.transpose([1,0])
+    f = pd.DataFrame(f,index=[i+1 for i in range(f.shape[0])])
+    f.to_excel(path.split(".")[0]+".xlsx")
+
