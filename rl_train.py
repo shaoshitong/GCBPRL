@@ -9,7 +9,7 @@ from Environments.PBS import EnvironmentPBS
 from Methods.rl_utils import *
 from Methods.SAC import *
 
-path = "./Datas/data1.xlsx"
+path = "./Datas/data2.xlsx"
 queue_len = 318
 env = EnvironmentPBS(queue_len, path)
 choose = env.begin_choose_action

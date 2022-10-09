@@ -227,7 +227,7 @@ class EnvironmentPBS(gym.Env):
         agent_2_require_time = (now_agent_observation_require_time[1] > 0).sum().item()
         if agent_1_require_time == 0:
             if 0 < now_agent_observation[0] <= 6 and (
-                now_observation[now_agent_observation[0] - 1, 0].item() == 0
+                    now_observation[now_agent_observation[0] - 1, 0].item() == 0
             ):
                 car = now_tuzhuang_observation[0].get().number
                 now_observation[now_agent_observation[0] - 1, 0] = car
@@ -237,13 +237,13 @@ class EnvironmentPBS(gym.Env):
                 now_tuzhuang_observation_require_time[0] = 0
                 now_agent_observation_require_time[0] = self.agent_1_require_time_1[
                     now_agent_observation[0] - 1
-                ]
+                    ]
 
             elif (
-                6 < now_agent_observation[0] <= 12
-                and (now_observation[6, 0].item() != 0)
-                and (now_observation_require_time[6, 0].item() <= 1)
-                and (now_observation[now_agent_observation[0] - 7, 0].item() == 0)
+                    6 < now_agent_observation[0] <= 12
+                    and (now_observation[6, 0].item() != 0)
+                    and (now_observation_require_time[6, 0].item() <= 1)
+                    and (now_observation[now_agent_observation[0] - 7, 0].item() == 0)
             ):
                 car = now_observation[6, 0]
                 now_observation[now_agent_observation[0] - 7, 0] = car
@@ -254,7 +254,7 @@ class EnvironmentPBS(gym.Env):
                 ] = self.agent_1_require_time_2[now_agent_observation[0] - 7]
                 now_agent_observation_require_time[0] = self.agent_1_require_time_2[
                     now_agent_observation[0] - 7
-                ]
+                    ]
 
             elif now_agent_observation[0] == 0:
                 pass
@@ -263,9 +263,9 @@ class EnvironmentPBS(gym.Env):
 
         if agent_2_require_time == 0:
             if (
-                0 < now_agent_observation[1] <= 6
-                and now_observation_require_time[now_agent_observation[1] - 1, 9].item() <= 1
-                and now_observation[now_agent_observation[1] - 1, 9].item() > 0
+                    0 < now_agent_observation[1] <= 6
+                    and now_observation_require_time[now_agent_observation[1] - 1, 9].item() <= 1
+                    and now_observation[now_agent_observation[1] - 1, 9].item() > 0
             ):
                 car_number = now_observation[now_agent_observation[1] - 1, 9]
                 type, power, drive = self.dictionary[car_number]
@@ -277,12 +277,12 @@ class EnvironmentPBS(gym.Env):
                 now_observation[now_agent_observation[1] - 1, 9] = 0
                 now_agent_observation_require_time[1] = self.agent_2_require_time_1[
                     now_agent_observation[1] - 1
-                ]
+                    ]
 
             elif (
-                6 < now_agent_observation[1] <= 12
-                and now_observation_require_time[now_agent_observation[1] - 7, 9].item() <= 1
-                and now_observation[now_agent_observation[1] - 7, 9].item() > 0
+                    6 < now_agent_observation[1] <= 12
+                    and now_observation_require_time[now_agent_observation[1] - 7, 9].item() <= 1
+                    and now_observation[now_agent_observation[1] - 7, 9].item() > 0
             ):
                 car = now_observation[now_agent_observation[1] - 7, 9]
                 self.return_road_used += 1
@@ -292,7 +292,7 @@ class EnvironmentPBS(gym.Env):
                 now_observation_require_time[6, 9] = 9
                 now_agent_observation_require_time[1] = self.agent_2_require_time_2[
                     now_agent_observation[1] - 7
-                ]
+                    ]
             elif now_agent_observation[1] == 0:
                 pass
             else:
@@ -304,7 +304,7 @@ class EnvironmentPBS(gym.Env):
             mask = second_observation == 0
             first_observation = now_observation[:6][:, i - 1]
             before_mask = (now_observation_require_time[:6][:, i - 1] - 1 <= 0) & (
-                first_observation > 0
+                    first_observation > 0
             )
             mask = mask & before_mask
             if mask.sum().item() > 0:
@@ -569,10 +569,10 @@ class EnvironmentPBS(gym.Env):
             plt.close("all")
         else:
             reward = (
-                0.4 * d_constraint_1
-                + 0.3 * d_constraint_2
-                + 0.2 * d_constraint_3
-                + 0.1 * d_constraint_4
+                    0.4 * d_constraint_1
+                    + 0.3 * d_constraint_2
+                    + 0.2 * d_constraint_3
+                    + 0.1 * d_constraint_4
             )
         return reward
 
@@ -632,9 +632,10 @@ class EnvironmentPBS(gym.Env):
                 # TODO PBS 约束6：当返回道10停车位有车身，同时接车机空闲，优先处理返回道10停车位的车身
                 mask = self.observation[:6, 0] == 0
                 agent_1_choose_action[7:] = mask
+                # agent_1_choose_action[1:7] = mask
                 if mask.sum().item() == 0:  # TODO: 存疑点，到底是否需要及时操作
                     agent_1_choose_action[0] = 1
-            elif not self.tuzhuang_observation[0].empty():  # TODO: 还有车没从涂装车间出完
+            if not self.tuzhuang_observation[0].empty():  # TODO: 还有车没从涂装车间出完
                 agent_1_choose_action[1:7] = np.where(
                     (self.observation_require_time[:6, 0] == 0) & (self.observation[:6, 0] == 0),
                     1,
@@ -653,18 +654,17 @@ class EnvironmentPBS(gym.Env):
             car_mask = self.observation[:6, 9] > 0
             require_time_mask = self.observation_require_time[:6, 9] - 1 <= 0
             mask = car_mask & require_time_mask
-            if mask.sum().item():  # TODO 约束7 8  先到先得
-                reach_time = np.min(self.time_cnt[mask])
-                idx = np.argwhere((self.time_cnt == reach_time) & mask) + 1  # TODO: +1
-                agent_2_choose_action[idx] = 1
-                agent_2_choose_action[idx + 6] = 1
+            if mask.sum().item():  # TODO 约束7 先到先得
+                # reach_time = np.min(self.time_cnt[mask])
+                # idx = np.argwhere((self.time_cnt == reach_time) & mask) + 1  # TODO: +1
+                agent_2_choose_action[1:7][mask] = 1
+                agent_2_choose_action[7:][mask] = 1
                 mask2 = self.observation_require_time[6, 9] > 0
                 if mask2:
                     agent_2_choose_action[7:13] = 0
             else:
                 agent_2_choose_action[0] = 1
         return [agent_1_choose_action, agent_2_choose_action]
-
 
 # env = EnvironmentPBS(1000, "/home/sst/product/RL/Datas/data1.xlsx")
 # env.observation = (np.random.rand(7, 10) * 2).astype(np.int)
